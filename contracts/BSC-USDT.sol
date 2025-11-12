@@ -1,7 +1,3 @@
-/**
- *Submitted for verification at BscScan.com on 2020-09-04
-*/
-
 pragma solidity 0.5.16;
 
 interface IBEP20 {

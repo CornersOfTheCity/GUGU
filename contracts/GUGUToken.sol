@@ -13,7 +13,8 @@ import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract GUGUToken is ERC20, Ownable, ERC20Permit, ERC20Votes {
-    uint256 public constant TOTAL_SUPPLY = 10_000_000_000 * 1e18;
+    uint256 public constant MAX_SUPPLY = 10_000_000_000 * 1e18;
+    uint256 public constant INITIAL_SUPPLY = 1_000_000 * 1e18;
 
     constructor(
         address initialOwner
@@ -22,10 +23,14 @@ contract GUGUToken is ERC20, Ownable, ERC20Permit, ERC20Votes {
         Ownable(initialOwner)
         ERC20Permit("GUGU Token")
     {
-        _mint(initialOwner, TOTAL_SUPPLY);
+        _mint(initialOwner, INITIAL_SUPPLY);
     }
 
     function mint(address to, uint256 amount) public onlyOwner {
+        require(
+            totalSupply() + amount <= MAX_SUPPLY,
+            "GUGUToken: mint amount exceeds max supply"
+        );
         _mint(to, amount);
     }
 
