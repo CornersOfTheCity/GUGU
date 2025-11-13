@@ -19,9 +19,20 @@ module.exports = buildModule("GUGUTokenModule", (m) => {
     envInitialOwner && envInitialOwner !== "" ? envInitialOwner : deployer
   );
 
-  // 部署 GUGUToken 合约
-  const gugu = m.contract("GUGUToken", [initialOwner]);
+  // 部署实现合约（Implementation）
+  const implementation = m.contract("GUGUToken");
 
-  return { gugu };
+  // 编码 initialize 函数调用
+  const initializeData = m.encodeFunctionCall(implementation, "initialize", [
+    initialOwner,
+  ]);
+
+  // 部署 ERC1967 代理合约（UUPS 使用 ERC1967 标准）
+  // ERC1967Proxy 构造函数参数：(implementation, _data)
+  const proxy = m.contract("ERC1967Proxy", [implementation, initializeData], {
+    id: "GUGUTokenProxy",
+  });
+
+  return { implementation, proxy };
 });
 
