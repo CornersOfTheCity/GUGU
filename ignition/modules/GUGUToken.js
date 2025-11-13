@@ -1,5 +1,8 @@
 // This setup uses Hardhat Ignition to manage smart contract deployments.
 // Learn more about it at https://v2.hardhat.org/ignition
+//
+// 注意：对于可升级合约，推荐使用 scripts/deploy-gugu-upgradeable.js
+// 该脚本使用 @openzeppelin/hardhat-upgrades 插件，这是 OpenZeppelin 官方推荐的方式
 
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 
@@ -19,20 +22,24 @@ module.exports = buildModule("GUGUTokenModule", (m) => {
     envInitialOwner && envInitialOwner !== "" ? envInitialOwner : deployer
   );
 
-  // 部署实现合约（Implementation）
+  // 注意：Ignition 目前对可升级合约的支持有限
+  // 推荐使用 scripts/deploy-gugu-upgradeable.js 进行部署
+  // 该脚本使用 @openzeppelin/hardhat-upgrades 插件
+  
+  // 如果仍想使用 Ignition，需要手动部署实现和代理
+  // 这里提供一个基础示例（不推荐）
   const implementation = m.contract("GUGUToken");
-
+  
   // 编码 initialize 函数调用
   const initializeData = m.encodeFunctionCall(implementation, "initialize", [
     initialOwner,
   ]);
 
-  // 部署 ERC1967 代理合约（UUPS 使用 ERC1967 标准）
-  // ERC1967Proxy 构造函数参数：(implementation, _data)
-  const proxy = m.contract("ERC1967Proxy", [implementation, initializeData], {
-    id: "GUGUTokenProxy",
-  });
-
-  return { implementation, proxy };
+  // 注意：这需要 contracts/ERC1967Proxy.sol 存在
+  // 更好的方式是使用 scripts/deploy-gugu-upgradeable.js
+  throw new Error(
+    "请使用 scripts/deploy-gugu-upgradeable.js 部署可升级合约。" +
+    "该脚本使用 @openzeppelin/hardhat-upgrades 插件，是 OpenZeppelin 官方推荐的方式。"
+  );
 });
 

@@ -21,7 +21,8 @@ cp .env.example .env
 编辑 `.env` 文件，填入以下信息：
 
 - `PRIVATE_KEY`: 你的钱包私钥（用于部署和交易签名）
-- `BSCSCAN_API_KEY`: BSCScan API Key（用于合约验证，获取地址：https://bscscan.com/myapikey）
+- `ETHERSCAN_API_KEY`: Etherscan API Key（用于合约验证，支持 BSC 网络，获取地址：https://etherscan.io/myapikey）
+- `INITIAL_OWNER`: （可选）GUGUToken 的初始所有者地址，如果不设置则使用部署者地址
 
 ### 3. 编译合约
 
@@ -31,9 +32,9 @@ npx hardhat compile
 
 ### 4. 部署合约
 
-#### 使用 Hardhat Ignition 部署（推荐）
+#### 部署 BSC-USDT 合约
 
-**部署 BSC-USDT 合约：**
+**使用 Hardhat Ignition 部署：**
 
 部署到 BSC 测试网：
 ```bash
@@ -45,9 +46,38 @@ npx hardhat ignition deploy ignition/modules/USDT.js --network bscTestnet
 npx hardhat ignition deploy ignition/modules/USDT.js --network bsc
 ```
 
-**部署 GUGUToken 合约（UUPS 可升级）：**
+#### 部署 GUGUToken 合约（UUPS 可升级）
 
-使用默认所有者（部署者地址）：
+**推荐方式：使用 @openzeppelin/hardhat-upgrades 插件**
+
+这是 OpenZeppelin 官方推荐的方式，会自动处理代理部署、初始化和升级兼容性验证。
+
+部署到 BSC 测试网：
+```bash
+npx hardhat run scripts/deploy-gugu-upgradeable.js --network bscTestnet
+```
+
+部署到 BSC 主网：
+```bash
+npx hardhat run scripts/deploy-gugu-upgradeable.js --network bsc
+```
+
+自定义初始所有者地址：
+```bash
+# 方式1：通过环境变量
+INITIAL_OWNER=0xYourAddress npx hardhat run scripts/deploy-gugu-upgradeable.js --network bscTestnet
+
+# 方式2：在 .env 文件中设置 INITIAL_OWNER=0xYourAddress
+```
+
+部署后会显示：
+- **代理合约地址**：这是实际使用的地址，用户应该使用这个地址
+- **实现合约地址**：实现逻辑的地址
+
+**备选方式：使用 Hardhat Ignition**
+
+如果希望使用 Ignition 的部署管理功能：
+
 ```bash
 # 测试网
 npx hardhat ignition deploy ignition/modules/GUGUToken.js --network bscTestnet
@@ -56,36 +86,30 @@ npx hardhat ignition deploy ignition/modules/GUGUToken.js --network bscTestnet
 npx hardhat ignition deploy ignition/modules/GUGUToken.js --network bsc
 ```
 
-自定义初始所有者地址（通过环境变量）：
-```bash
-# 在 .env 文件中设置 INITIAL_OWNER=0xYourAddress
-# 然后运行：
-npx hardhat ignition deploy ignition/modules/GUGUToken.js --network bscTestnet
-```
-
-或者通过参数传递：
-```bash
-# 测试网
-npx hardhat ignition deploy ignition/modules/GUGUToken.js --network bscTestnet --parameters '{"GUGUTokenModule":{"initialOwner":"0xYourAddress"}}'
-
-# 主网
-npx hardhat ignition deploy ignition/modules/GUGUToken.js --network bsc --parameters '{"GUGUTokenModule":{"initialOwner":"0xYourAddress"}}'
-```
-
-**查看部署状态：**
+查看 Ignition 部署状态：
 ```bash
 npx hardhat ignition status --network bscTestnet
 ```
 
-部署后会返回两个地址：
-- `implementation`: 实现合约地址
-- `proxy`: 代理合约地址（这是实际使用的地址）
-
 ### 5. 升级合约
 
-**升级 GUGUToken 合约：**
+**推荐方式：使用 @openzeppelin/hardhat-upgrades 插件**
 
-升级到新版本：
+升级 GUGUToken 合约到新版本：
+
+```bash
+# 测试网
+PROXY_ADDRESS=0x代理合约地址 npx hardhat run scripts/upgrade-gugu.js --network bscTestnet
+
+# 或
+npx hardhat run scripts/upgrade-gugu.js --network bscTestnet 0x代理合约地址
+
+# 主网
+PROXY_ADDRESS=0x代理合约地址 npx hardhat run scripts/upgrade-gugu.js --network bsc
+```
+
+**备选方式：使用 Hardhat Ignition**
+
 ```bash
 # 测试网
 npx hardhat ignition deploy ignition/modules/UpgradeGUGUToken.js --network bscTestnet --parameters '{"UpgradeGUGUTokenModule":{"proxyAddress":"0x代理合约地址"}}'
@@ -94,39 +118,85 @@ npx hardhat ignition deploy ignition/modules/UpgradeGUGUToken.js --network bscTe
 npx hardhat ignition deploy ignition/modules/UpgradeGUGUToken.js --network bsc --parameters '{"UpgradeGUGUTokenModule":{"proxyAddress":"0x代理合约地址"}}'
 ```
 
-**注意：**
+**升级注意事项：**
 - 只有合约的 owner 可以执行升级
 - 升级不会影响代理合约地址，用户继续使用代理地址
 - 升级前请确保新实现合约已经通过测试
+- `@openzeppelin/hardhat-upgrades` 插件会自动验证升级兼容性
 
 ### 6. 验证合约（开源）
 
-#### 使用 Ignition 部署后的验证
+#### 验证 BSC-USDT
 
-Ignition 部署后，需要手动验证合约。首先查看部署状态获取合约地址：
+```bash
+npx hardhat verify --network bscTestnet <合约地址>
+```
+
+#### 验证 GUGUToken
+
+**使用 @openzeppelin/hardhat-upgrades 部署的合约：**
+
+部署脚本会自动尝试验证实现合约。如果自动验证失败，可以手动验证：
+
+```bash
+# 验证实现合约
+npx hardhat verify --network bscTestnet <实现合约地址>
+
+# 代理合约验证
+# 代理合约需要在 BSCScan 上手动验证
+# 访问：https://testnet.bscscan.com/address/<代理合约地址>#code
+# 选择 "Is this a proxy?" 选项，输入实现合约地址
+```
+
+**使用 Ignition 部署的合约：**
+
+首先查看部署状态获取合约地址：
 
 ```bash
 npx hardhat ignition status --network bscTestnet
 ```
 
-然后使用以下命令验证：
+然后验证：
 
-**验证 BSC-USDT：**
 ```bash
-npx hardhat verify --network bscTestnet <合约地址>
+# 验证实现合约
+npx hardhat verify --network bscTestnet <实现合约地址>
+
+# 验证代理合约（需要手动在 BSCScan 上进行）
 ```
 
-**验证 GUGUToken：**
-```bash
-npx hardhat verify --network bscTestnet <合约地址> <初始所有者地址>
-```
+## 网络配置
 
-例如：
-```bash
-npx hardhat verify --network bscTestnet 0x1234567890abcdef... 0xYourOwnerAddress
-```
+- **BSC 主网**: Chain ID 56
+- **BSC 测试网**: Chain ID 97
 
 ## Solidity 版本
 
 - 主要版本：0.8.28（用于 GUGUToken.sol 等新合约）
 - 兼容版本：0.5.16（专门用于 BSC-USDT.sol）
+
+## 技术栈
+
+- **Hardhat**: 开发框架
+- **OpenZeppelin Contracts**: 安全合约库
+- **@openzeppelin/hardhat-upgrades**: 可升级合约部署工具（推荐）
+- **Hardhat Ignition**: 部署管理工具（备选）
+
+## 合约说明
+
+### GUGUToken
+
+- **类型**: ERC20 代币（UUPS 可升级）
+- **总供应量**: 10,000,000,000 GUGU
+- **初始供应量**: 10,000,000,000 GUGU（部署时全部铸造给初始所有者）
+- **功能**: 
+  - ERC20 标准功能
+  - ERC20Permit（签名授权）
+  - ERC20Votes（治理投票）
+  - UUPS 可升级
+
+### BSC-USDT
+
+- **类型**: BEP20 代币
+- **总供应量**: 30,000,000 USDT
+- **功能**: 标准 BEP20 功能
