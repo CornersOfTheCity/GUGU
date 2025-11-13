@@ -9,7 +9,8 @@ async function main() {
   console.log("账户余额:", hre.ethers.formatEther(await hre.ethers.provider.getBalance(deployer.address)), "BNB\n");
 
   // 获取初始所有者地址（默认为部署者）
-  const initialOwner = process.env.INITIAL_OWNER || deployer.address;
+  const initialOwner =
+    process.env.GUGU_TOKEN_OWNER || process.env.INITIAL_OWNER || deployer.address;
   console.log("初始所有者地址:", initialOwner);
   console.log("最大供应量: 10,000,000,000 GUGU\n");
 

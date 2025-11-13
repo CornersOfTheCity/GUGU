@@ -22,7 +22,9 @@ cp .env.example .env
 
 - `PRIVATE_KEY`: 你的钱包私钥（用于部署和交易签名）
 - `ETHERSCAN_API_KEY`: Etherscan API Key（用于合约验证，支持 BSC 网络，获取地址：https://etherscan.io/myapikey）
-- `INITIAL_OWNER`: （可选）GUGUToken 的初始所有者地址，如果不设置则使用部署者地址
+- `GUGU_TOKEN_OWNER`: （可选）GUGUToken 的初始所有者地址，如果不设置则使用部署者地址
+- `GUGU_NFT_ADMIN`: （可选）GUGUNFT 的默认管理员地址，如果不设置则使用部署者地址
+- `GUGU_NFT_MINTER`: （可选）GUGUNFT 的铸造者地址，如果不设置则使用部署者地址
 
 ### 3. 编译合约
 
@@ -65,9 +67,9 @@ npx hardhat run scripts/deploy-gugu-upgradeable.js --network bsc
 自定义初始所有者地址：
 ```bash
 # 方式1：通过环境变量
-INITIAL_OWNER=0xYourAddress npx hardhat run scripts/deploy-gugu-upgradeable.js --network bscTestnet
+GUGU_TOKEN_OWNER=0xYourAddress npx hardhat run scripts/deploy-gugu-upgradeable.js --network bscTestnet
 
-# 方式2：在 .env 文件中设置 INITIAL_OWNER=0xYourAddress
+# 方式2：在 .env 文件中设置 GUGU_TOKEN_OWNER=0xYourAddress
 ```
 
 部署后会显示：
@@ -90,6 +92,31 @@ npx hardhat ignition deploy ignition/modules/GUGUToken.js --network bsc
 ```bash
 npx hardhat ignition status --network bscTestnet
 ```
+
+#### 部署 GUGUNFT 合约
+
+**使用部署脚本（推荐）：**
+
+```bash
+# 测试网
+npx hardhat run scripts/deploy-gugu-nft.js --network bscTestnet
+
+# 主网
+npx hardhat run scripts/deploy-gugu-nft.js --network bsc
+```
+
+自定义管理员或铸造者地址：
+```bash
+# 方式1：通过环境变量
+GUGU_NFT_ADMIN=0xAdmin GUGU_NFT_MINTER=0xMinter \
+  npx hardhat run scripts/deploy-gugu-nft.js --network bscTestnet
+
+# 方式2：在 .env 文件中设置
+# GUGU_NFT_ADMIN=0xAdmin
+# GUGU_NFT_MINTER=0xMinter
+```
+
+部署后会输出合约地址和验证命令，如需手动验证可参考脚本提示。
 
 ### 5. 升级合约
 
