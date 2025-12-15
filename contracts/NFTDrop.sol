@@ -2,9 +2,10 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract SignedNFTDistributorSimple is Ownable {
+contract DropNFT is Ownable, IERC721Receiver {
     IERC721Enumerable public immutable nft;
     address public signer; 
     mapping(bytes32 => bool) public usedHash;
@@ -46,5 +47,36 @@ contract SignedNFTDistributorSimple is Ownable {
         nft.safeTransferFrom(address(this), to, tokenId);
 
         emit Distributed(to, tokenId, hash);
+    }
+
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return IERC721Receiver.onERC721Received.selector;
+    }
+
+    function adminTransferNFTs(address to, uint256[] calldata tokenIds) external onlyOwner {
+        require(to != address(0), "invalid to");
+        require(tokenIds.length > 0, "no tokenIds");
+
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            nft.safeTransferFrom(address(this), to, tokenIds[i]);
+        }
+    }
+
+    function adminBatchTransferNFT(address to, uint256 quantity) external onlyOwner {
+        require(to != address(0), "invalid to");
+        require(quantity > 0, "invalid quantity");
+
+        uint256 balance = nft.balanceOf(address(this));
+        require(balance >= quantity, "insufficient nft balance");
+
+        for (uint256 i = 0; i < quantity; i++) {
+            uint256 tokenId = nft.tokenOfOwnerByIndex(address(this), 0);
+            nft.safeTransferFrom(address(this), to, tokenId);
+        }
     }
 }
